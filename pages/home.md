@@ -6,12 +6,19 @@ type: page
 
 # Detections Overview
 
+{% range_calendar
+    id="date_range"
+    default_range="last 7 days"
+    preset_ranges=["last 7 days", "last 30 days", "last 3 months", "last 6 months", "last 12 months", "month to date", "year to date", "all time"]
+/%}
+
 ```sql detection_summary
 SELECT
   count(*) as total_detections,
   count(DISTINCT domain) as unique_domains,
   count(DISTINCT service_id) as unique_services
 FROM postgres_public_detections
+WHERE detected_at {{date_range.between}}
 ```
 
 {% big_value
@@ -33,56 +40,6 @@ FROM postgres_public_detections
     value="unique_services"
     title="Unique Services"
     fmt="#,##0"
-/%}
-
-## Last Hour
-
-```sql last_hour_summary
-SELECT
-  count(*) as total_detections,
-  count(DISTINCT domain) as unique_domains,
-  count(DISTINCT service_id) as unique_services
-FROM postgres_public_detections
-WHERE detected_at >= now() - INTERVAL 1 HOUR
-```
-
-{% big_value
-    data="last_hour_summary"
-    value="total_detections"
-    title="Detections (Last Hour)"
-    fmt="#,##0"
-/%}
-
-{% big_value
-    data="last_hour_summary"
-    value="unique_domains"
-    title="Domains (Last Hour)"
-    fmt="#,##0"
-/%}
-
-{% big_value
-    data="last_hour_summary"
-    value="unique_services"
-    title="Services (Last Hour)"
-    fmt="#,##0"
-/%}
-
-```sql last_hour_by_minute
-SELECT
-  toStartOfMinute(detected_at) as minute,
-  count(*) as detections
-FROM postgres_public_detections
-WHERE detected_at >= now() - INTERVAL 1 HOUR
-GROUP BY minute
-ORDER BY minute
-```
-
-{% bar_chart
-    data="last_hour_by_minute"
-    x="minute"
-    y="detections"
-    y_fmt="#,##0"
-    title="Detections by Minute (Last Hour)"
 /%}
 
 ## Detections Over Time
@@ -110,10 +67,8 @@ ORDER BY minute
 ```sql all_services
 SELECT
   service_id,
-  count(*) as detections,
-  count(DISTINCT domain) as unique_domains,
   min(detected_at) as first_seen,
-  max(detected_at) as last_seen
+  count(*) as detections
 FROM postgres_public_detections
 GROUP BY service_id
 ORDER BY detections DESC
@@ -122,25 +77,4 @@ ORDER BY detections DESC
 {% table
     data="all_services"
     search=true
-%}
-    {% dimension
-        value="service_id"
-    /%}
-    {% measure
-        value="sum(detections)"
-        title="Detections"
-        fmt="#,##0"
-        sort="desc"
-    /%}
-    {% measure
-        value="sum(unique_domains)"
-        title="Unique Domains"
-        fmt="#,##0"
-    /%}
-    {% dimension
-        value="first_seen"
-    /%}
-    {% dimension
-        value="last_seen"
-    /%}
-{% /table %}
+/%}
