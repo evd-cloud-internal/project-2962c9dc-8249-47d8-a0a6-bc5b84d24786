@@ -18,7 +18,7 @@ SELECT
   count(DISTINCT domain) as unique_domains,
   count(DISTINCT service_id) as unique_services
 FROM postgres_public_detections
-WHERE detected_at {{date_range.between}}
+WHERE toDate(detected_at)::Date {{date_range.between}}
 ```
 
 {% big_value
