@@ -4,29 +4,13 @@ assetId: 5ba6ddb6-7660-48f1-8c07-51d6ee356792
 type: page
 ---
 
-# Detections by Service
-
-```sql groups
-select distinct g as group_id
-from all_bfbpyi
-array join groups as g
-order by g
-```
+# Services
 
 ```sql services
 select distinct identifier as service_id
 from all_bfbpyi
-array join groups as g
-where g = {{group_filter}}
 order by identifier
 ```
-
-{% dropdown
-    id="group_filter"
-    data="groups"
-    value_column="group_id"
-    title="Group"
-/%}
 
 {% dropdown
     id="service_id"
@@ -41,61 +25,47 @@ order by identifier
     default_range="last 12 months"
 /%}
 
+```sql detections_over_time
+select
+    toDate(d.first_detected_at) as detection_date,
+    count(*) as detections
+from postgres_public_detections d
+inner join all_bfbpyi s on d.service_id = s.identifier
+where d.service_id = {{service_id.selected}}
+  and d.first_detected_at between {{date_range.start}} and {{date_range.end}}
+group by detection_date
+order by detection_date
+```
+
 ## Detections Over Time
 
-```sql group_services
-select identifier as service_id
-from all_bfbpyi
-array join groups as g
-where g = {{group_filter}}
-```
-
-{% line_chart
-    data="postgres_public_detections"
-    x="detected_at"
-    y="count(*)"
-    date_grain="day"
-    where="service_id in (select service_id from {{group_services}})"
-    filters=["service_id"]
-    date_range={
-        date="detected_at"
-        range={{date_range}}
-    }
-    title="Daily Detections"
+{% bar_chart
+    data="detections_over_time"
+    x="detection_date"
+    y="detections"
+    title="Detections Over Time"
+    subtitle="Filtered by group, service, and date range"
 /%}
 
-
-## Detections by Service
-
-```sql group_aggregate
+```sql all_detections
 select
-    d.service_id,
-    count(*) as detection_count,
-    min(d.detected_at) as earliest_detection,
-    max(d.detected_at) as latest_detection
+    d.id,
+    d.domain,
+    d.rank,
+    d.first_detected_at,
+    d.detected_at
 from postgres_public_detections d
-where d.service_id in (select service_id from {{group_services}})
-  and d.detected_at {{date_range.between}}
-group by d.service_id
-order by detection_count desc
+where d.service_id = {{service_id.selected}}
+  and d.first_detected_at between {{date_range.start}} and {{date_range.end}}
+order by d.first_detected_at desc
 ```
 
-{% table data="group_aggregate" /%}
-
-
-## 100 Most Recent Detections
-
-```sql recent_detections
-select id, service_id, domain, detected_at, rank, first_detected_at
-from postgres_public_detections
-where service_id in (select service_id from {{group_services}})
-  and detected_at {{date_range.between}}
-order by detected_at desc
-limit 100
-```
+## All Detections
 
 {% table
-    data="recent_detections"
-    filters=["service_id"]
+    data="all_detections"
+    search=true
     page_size=20
+    title="Detections"
+    subtitle="All detections for the selected service"
 /%}
