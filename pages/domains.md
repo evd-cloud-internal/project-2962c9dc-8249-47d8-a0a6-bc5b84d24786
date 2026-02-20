@@ -43,7 +43,7 @@ order by detected_at desc
 ## Current Detections
 
 {% table data="detections" %}
-    {% dimension value="service_id" link="concat('/services?service=', service_id)" /%}
+    {% dimension value="service_id" link="concat('/org_01JXAKQQVRM397QNJTFC12YWE0/shovel/domains?service_id=', service_id)" /%}
 {% /table %}
 
 ```sql deltas
@@ -60,5 +60,5 @@ order by detected_at desc
 ## Detection Changes
 
 {% table data="deltas" %}
-    {% dimension value="service_id" link="concat('/services?service=', service_id)" /%}
+    {% dimension value="service_id" link="concat('/org_01JXAKQQVRM397QNJTFC12YWE0/shovel/domains?service_id=', service_id)" /%}
 {% /table %}
