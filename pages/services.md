@@ -64,13 +64,8 @@ where g = {{group_filter}}
     title="Daily Detections"
 /%}
 
+
 ## Detections by Service
-
-```sql service_not_selected
-select 1 where {{service_id}} = ''
-```
-
-{% if data="service_not_selected" %}
 
 ```sql group_aggregate
 select
@@ -87,7 +82,6 @@ order by detection_count desc
 
 {% table data="group_aggregate" /%}
 
-{% /if %}
 
 ## 100 Most Recent Detections
 
